@@ -65,9 +65,9 @@ namespace HyperTizen.Core
             var points = new CapturePoint[top + right + bottom + left];
             int next = 0;
             for (int i = 0; i < top; i++) points[next++] = new CapturePoint((i + 0.5) / top, verticalInset, Edge.Top);
-            for (int i = 0; i < right; i++) points[next++] = new CapturePoint(1 - DefaultInset, (i + 0.5) / right, Edge.Right);
+            for (int i = 0; i < right; i++) points[next++] = new CapturePoint(1 - DefaultInset, Along(i, right, verticalInset), Edge.Right);
             for (int i = 0; i < bottom; i++) points[next++] = new CapturePoint((i + 0.5) / bottom, 1 - verticalInset, Edge.Bottom);
-            for (int i = 0; i < left; i++) points[next++] = new CapturePoint(DefaultInset, (i + 0.5) / left, Edge.Left);
+            for (int i = 0; i < left; i++) points[next++] = new CapturePoint(DefaultInset, Along(i, left, verticalInset), Edge.Left);
             Points = points;
         }
 
@@ -75,6 +75,15 @@ namespace HyperTizen.Core
         public int Bottom { get; }
         public int Left { get; }
         public int Right { get; }
+
+        // Where down the screen a left or right zone is measured. With the top and bottom points
+        // moved in past black bars, the side zones share only the height between the bars, so the
+        // outermost ones do not land on a bar; with no bars they spread over the whole height.
+        private static double Along(int zone, int zones, double verticalInset)
+        {
+            double margin = verticalInset - DefaultInset;
+            return margin + (zone + 0.5) / zones * (1 - 2 * margin);
+        }
 
         // How far in from the top and bottom edges the top and bottom points sit.
         public double VerticalInset { get; }

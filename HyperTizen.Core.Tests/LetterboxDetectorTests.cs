@@ -127,15 +127,43 @@ public class LetterboxDetectorTests
     }
 
     [Fact]
-    public void A_vertical_inset_moves_only_the_top_and_bottom_points()
+    public void A_vertical_inset_moves_the_top_and_bottom_points_in()
     {
         CaptureLayout moved = CaptureLayout.Default.WithVerticalInset(0.16);
 
         Assert.All(moved.Points.Where(point => point.Edge == Edge.Top), point => Assert.Equal(0.16, point.Y, 6));
         Assert.All(moved.Points.Where(point => point.Edge == Edge.Bottom), point => Assert.Equal(0.84, point.Y, 6));
         Assert.All(moved.Points.Where(point => point.Edge == Edge.Left), point => Assert.Equal(CaptureLayout.DefaultInset, point.X, 6));
+        Assert.Equal(0.5, moved.Points.Where(point => point.Edge == Edge.Left).ElementAt(1).Y, 6);
         Assert.All(moved.Points.Where(point => point.Edge == Edge.Right), point => Assert.Equal(1 - CaptureLayout.DefaultInset, point.X, 6));
         Assert.Equal((4, 4, 3, 3), (moved.Top, moved.Bottom, moved.Left, moved.Right));
+    }
+
+    [Fact]
+    public void Side_zones_stay_between_the_bars()
+    {
+        // A 2.39:1 film: bars reach 12.8% from the top and the bottom.
+        CaptureLayout moved = CaptureLayout.Default.WithVerticalInset(0.16);
+
+        Assert.All(
+            moved.Points.Where(point => point.Edge == Edge.Left || point.Edge == Edge.Right),
+            point => Assert.InRange(point.Y, 0.128, 0.872));
+    }
+
+    [Fact]
+    public void Without_bars_side_zones_spread_over_the_whole_height()
+    {
+        double[] left = CaptureLayout.Default.Points.Where(point => point.Edge == Edge.Left).Select(point => point.Y).ToArray();
+
+        Assert.Equal(new[] { 1 / 6.0, 0.5, 5 / 6.0 }, left, new DoubleComparer(6));
+    }
+
+    private sealed class DoubleComparer : IEqualityComparer<double>
+    {
+        private readonly double _tolerance;
+        public DoubleComparer(int digits) { _tolerance = Math.Pow(10, -digits); }
+        public bool Equals(double a, double b) => Math.Abs(a - b) < _tolerance;
+        public int GetHashCode(double value) => 0;
     }
 
     [Fact]
